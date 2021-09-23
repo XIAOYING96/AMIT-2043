@@ -1,44 +1,38 @@
 <?php
 $PAGE_TITLE = 'Insert Student';
-include('header.php');
+include('includes/header.php');
 ?>
 
 <div>
-    <h2>Insert Student</h2>
+    <h1>Insert Student</h1>
 
     <?php
-    require_once('helper.php');
-    
-    $id = '';
-    $name = '';
-    $gender = '';
-    $program = '';
+    require_once('includes/helper.php');
 
-    if(!empty($_POST)){ // Something posted back.
-        $id = strtoupper(trim($_POST['StudentID']));
-        $name = trim($_POST['StudentName']);
-        $gender = trim($_POST['Gender']);
-        $program = trim($_POST['Program']);
+    if (!empty($_POST)) {
+        $id = strtoupper(trim($_POST['id']));
+        $name = trim($_POST['name']);
+        $gender = trim($_POST['gender']);
+        $program = trim($_POST['program']);
 
-        $error['StudentID'] = validateStudentID($id);
-        $error['StudentName'] = validateStudentName($name);
-        $error['Dender'] = validateGender($gender);
-        $error['Program'] = validateProgram($program);
-        $error = array_filter($error); // Remove null values.
-        
-        if (empty($error)) { // If no error.
+        $error['id'] = validateStudentID($id);
+        $error['name'] = validateStudentName($name);
+        $error['gender'] = validateGender($gender);
+        $error['program'] = validateProgram($program);
+        $error = array_filter($error);
+
+        if (empty($error)) {
 
             $con = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+            $sql = '
+                INSERT INTO Student (StudentID, StudentName, Gender, Program)
+                VALUES (?, ?, ?, ?)
+            ';
+            $stm = $con->prepare($sql);
+            $stm->bind_param('ssss', $id, $name, $gender, $program);
+            $stm->execute();
 
-            $id = mysqli_real_escape_string($con, $_POST['StudentID']);
-            $name = mysqli_real_escape_string($con, $_POST['StudentName']);
-            $gender = mysqli_real_escape_string($con, $_POST['Gender']);
-            $program = mysqli_real_escape_string($con, $_POST['Program']);
-
-            $sql = " INSERT INTO Student (StudentID, StudentName, Gender, Program)"
-                    . "VALUES ('$id', '$name', '$gender', '$program')";
-
-            if (mysqli_query($con, $sql) === TRUE) {
+            if ($stm->affected_rows > 0) {
                 printf('
                     <div class="info">
                     Student <strong>%s</strong> has been inserted.
@@ -48,7 +42,7 @@ include('header.php');
 
                 $id = $name = $gender = $program = null;
             } else {
-                // Something goes wrong.
+
                 echo '
                     <div class="error">
                     Opps. Database issue. Record not inserted.
@@ -56,9 +50,9 @@ include('header.php');
                     ';
             }
 
+            $stm->close();
             $con->close();
-
-        } else { // Input error detected. Display error message.
+        } else {
             echo '<ul class="error">';
             foreach ($error as $value) {
                 echo "<li>$value</li>";
@@ -71,29 +65,29 @@ include('header.php');
     <form action="" method="post">
         <table cellpadding="5" cellspacing="0">
             <tr>
-                <td><label for="StudentID">Student ID :</label></td>
+                <td><label for="id">Student ID :</label></td>
                 <td>
-                    <?php
-                    htmlInputText('name', $id, 10);
-                    ?>
+    <?php
+    htmlInputText('id', $id, 10);
+    ?>
                 </td>
             </tr>
             <tr>
-                <td><label for="StudentName">Student Name :</label></td>
+                <td><label for="name">Student Name :</label></td>
                 <td>
-                    <?php htmlInputText('StudentName', $name, 30) ?>
+                    <?php htmlInputText('name', $name, 30) ?>
                 </td>
             </tr>
             <tr>
                 <td>Gender :</td>
                 <td>
-                    <?php htmlRadioList('Gender', $GENDERS, $gender) ?>
+<?php htmlRadioList('gender', $GENDERS, $gender) ?>
                 </td>
             </tr>
             <tr>
-                <td><label for="Program">Program :</label></td>
+                <td><label for="program">Program :</label></td>
                 <td>
-                    <?php htmlSelect('Program', $PROGRAMS, $program, '-- Select One --') ?>
+<?php htmlSelect('program', $PROGRAMS, $program, '-- Select One --') ?>
                 </td>
             </tr>
         </table>
@@ -101,5 +95,11 @@ include('header.php');
         <input type="submit" name="insert" value="Insert" />
         <input type="button" value="Cancel" onclick="location = 'list-student.php'" />
     </form>
-</div>
 
+    <p>
+        [ <a href="index.php">Index</a> ]
+    </p>
+</div>
+<?php
+include('includes/footer.php');
+?>
